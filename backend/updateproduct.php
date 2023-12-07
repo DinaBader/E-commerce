@@ -34,8 +34,8 @@ try {
             $product_name = $_POST['name'];
             $product_description = $_POST['description'];
 
-            $query = $mysqli->prepare('UPDATE product SET name=?, description=?, price=? WHERE product_id=? AND user_id=?');
-            $query->bind_param('ssiii', $product_name, $product_description, $product_price, $product_id, $decoded->user_id);
+            $query = $mysqli->prepare('UPDATE product SET name=?, description=?, price=? WHERE product_id=?');
+            $query->bind_param('ssii', $product_name, $product_description, $product_price, $product_id);
             $query->execute();
             $rowsAffected = $query->affected_rows;
 
@@ -45,23 +45,9 @@ try {
                 echo json_encode(["status" => "error", "message" => "Product not found or you don't have permission to update"]);
             }
         } else {
-            
-            $missingFields = [];
-            if (!isset($_POST["product_id"])) {
-                $missingFields[] = "product_id";
-            }
-            if (!isset($_POST["price"])) {
-                $missingFields[] = "price";
-            }
-            if (!isset($_POST["name"])) {
-                $missingFields[] = "name";
-            }
-            if (!isset($_POST["description"])) {
-                $missingFields[] = "description";
-            }
         
-            http_response_code(400); // Bad Request
-            echo json_encode(["error" => "Missing required field(s): " . implode(', ', $missingFields)]);
+            http_response_code(400);
+            echo json_encode(["error" => "Missing required field(s): "]);
             exit();
         }
     } else {
