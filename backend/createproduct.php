@@ -31,16 +31,23 @@ try {
     $description = $_POST['description'];
     $price = $_POST['price'];
     if ($decoded->usertype == 0) {
+
         //seller
         $query = $mysqli->prepare('INSERT INTO product (name, description, price) VALUES (?, ?, ?)');
         $query->bind_param('ssi', $product_name, $description, $price);
         $query->execute();
         $affectedRows = $query->affected_rows;
+        $productId = $mysqli->insert_id;
+
+        $queryDetail = $mysqli->prepare('INSERT INTO product_detail (product_id, user_id) VALUES (?, ?)');
+        $queryDetail->bind_param('ii', $productId, $decoded->user_id);
+        $queryDetail->execute();
+        $affectedRowsDetail = $queryDetail->affected_rows;
 
         $response = [];
         $response["permissions"] = true;
 
-        if ($affectedRows > 0) {
+        if ($affectedRows > 0 && $affectedRowsDetail > 0) {
             $response["inserted"] = true;
         } else {
             $response["inserted"] = false;
@@ -55,5 +62,6 @@ try {
     echo json_encode(["error" => "expired"]);
 } catch (Exception $e) {
     http_response_code(401);
-    echo json_encode(["error" => "Invalid token"]);
+    echo json_encode(["error" => "Invalid token: " . $e->getMessage()]);
+
 }

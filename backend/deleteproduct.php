@@ -24,29 +24,33 @@ if (!$token) {
     echo json_encode(["error" => "unauthorized"]);
     exit();
 }
+
 try {
     $key = "nabiha";
     $decoded = JWT::decode($token, new Key($key, 'HS256'));
     if ($decoded->usertype == 0) {
-        $query = $mysqli->prepare('select * from product_detail where user_id=?');
-        $query->bind_param('i',$decoded->user_id);
+        $product_id = $_POST['product_id'];
+        $query = $mysqli->prepare('delete from product where product_id=?');
+        $query->bind_param('i',$product_id);
         $query->execute();
-        $response = [];
-        $response["permissions"] = true;
-        $result = $query->get_result();
-        while ($products = $result->fetch_assoc()) {
-            $response[] = $products;
+        $rowsAffected = $query->affected_rows;
+
+        $queryDetail=$mysqli->prepare('delete from product_detail where product_id=? and user_id=?');
+        $queryDetail->bind_param('ii',$product_id,$decoded->user_id);
+        $queryDetail->execute();
+        $rowsAffecttedDetail=$query->affected_rows;
+        if ($rowsAffected > 0 && $rowsAffecttedDetail>0) {
+            echo json_encode(["status" => "success", "message" => "Product deleted successfully"]);
+        } else {
+            echo json_encode(["status" => "error", "message" => "Product not found or you don't have permission to delete"]);
         }
     } else {
-
-        $response = [];
-        $response["permissions"] = false;
+        echo json_encode(["status" => "error", "message" => "Unauthorized"]);
     }
-    echo json_encode($response);
 } catch (ExpiredException $e) {
     http_response_code(401);
     echo json_encode(["error" => "expired"]);
 } catch (Exception $e) {
     http_response_code(401);
-    echo json_encode(["error" => "Invalid token"]);
+    echo json_encode(["error" => "Invalid token: " . $e->getMessage()]);
 }
